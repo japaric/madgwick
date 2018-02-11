@@ -1,0 +1,8 @@
+[package]
+name = "madgwick"
+version = "0.1.0"
+authors = ["Jorge Aparicio <jorge@japaric.io>"]
+
+[dependencies]
+m = "0.1.1"
+mat = { git = "https://github.com/japaric/mat" }
