@@ -1,8 +1,14 @@
 [package]
-name = "madgwick"
-version = "0.1.0"
 authors = ["Jorge Aparicio <jorge@japaric.io>"]
+categories = ["embedded", "no-std"]
+description = "Madgwick's orientation filter"
+documentation = "https://docs.rs/madgwick"
+keywords = ["MARG", "IMU", "orientation", "filter"]
+license = "MIT OR Apache-2.0"
+name = "madgwick"
+repository = "https://github.com/japaric/madgwick"
+version = "0.1.0"
 
 [dependencies]
 m = "0.1.1"
-mat = { git = "https://github.com/japaric/mat" }
+mat = "0.1.0"
