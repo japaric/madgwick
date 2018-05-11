@@ -10,10 +10,10 @@
 
 #![deny(missing_docs)]
 #![deny(warnings)]
-#![feature(proc_macro)]
 #![no_std]
 
 extern crate m;
+#[macro_use]
 extern crate mat;
 
 use core::ops;
@@ -21,7 +21,6 @@ use core::ops;
 // XXX is this a bug? the `Float` extension trait *is* used
 #[allow(unused_imports)]
 use m::Float;
-use mat::mat;
 use mat::traits::{Matrix, Transpose};
 
 /// MARG orientation filter
@@ -89,32 +88,28 @@ impl Marg {
         let q4_q4 = q4 * q4;
 
         // f_g: 3x1 matrix (Eq. 25)
-        let f_g = &mat![
+        let f_g = &mat!(f32, [
             [2. * (q2_q4 - q1_q3) - a.x],
             [2. * (q1_q2 + q3_q4) - a.y],
             [2. * (0.5 - q2_q2 - q3_q3) - a.z],
-        ];
+        ]);
 
         // J_g: 3x4 matrix (Eq. 26)
-        let j_g = &mat![
+        let j_g = &mat!(f32, [
             [-2. * q3, 2. * q4, -2. * q1, 2. * q2],
             [2. * q2, 2. * q1, 2. * q4, 2. * q3],
             [0., -4. * q2, -4. * q3, 0.],
-        ];
+        ]);
 
         // f_b: 3x1 matrix (Eq. 29)
-        let f_b = &mat![
-            [
-                2. * bx * (0.5 - q3_q3 - q4_q4) + 2. * bz * (q2_q4 - q1_q3) - m.x
-            ],
+        let f_b = &mat!(f32, [
+            [2. * bx * (0.5 - q3_q3 - q4_q4) + 2. * bz * (q2_q4 - q1_q3) - m.x],
             [2. * bx * (q2_q3 - q1_q4) + 2. * bz * (q1_q2 + q3_q4) - m.y],
-            [
-                2. * bx * (q1_q3 + q2_q4) + 2. * bz * (0.5 - q2_q2 - q3_q3) - m.z
-            ],
-        ];
+            [2. * bx * (q1_q3 + q2_q4) + 2. * bz * (0.5 - q2_q2 - q3_q3) - m.z],
+        ]);
 
         // J_b: 3x4 matrix (Eq. 30)
-        let j_b = &mat![
+        let j_b = &mat!(f32, [
             [
                 -2. * bz * q3,
                 2. * bz * q4,
@@ -133,7 +128,7 @@ impl Marg {
                 2. * bx * q1 - 4. * bz * q3,
                 2. * bx * q2
             ],
-        ];
+        ]);
 
         // nabla_f: 4x1 matrix (Eq. 34)
         let nabla_f = j_g.t() * f_g + j_b.t() * f_b;
