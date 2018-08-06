@@ -12,15 +12,13 @@
 #![deny(warnings)]
 #![no_std]
 
-extern crate m;
+extern crate libm;
 #[macro_use]
 extern crate mat;
 
 use core::ops;
 
-// XXX is this a bug? the `Float` extension trait *is* used
-#[allow(unused_imports)]
-use m::Float;
+use libm::F32Ext;
 use mat::traits::{Matrix, Transpose};
 
 /// MARG orientation filter
