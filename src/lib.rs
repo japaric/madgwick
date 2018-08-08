@@ -158,7 +158,7 @@ impl Marg {
 }
 
 /// Vector in 3D space
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct F32x3 {
     /// X component
     pub x: f32,
