@@ -12,16 +12,14 @@
 #![deny(warnings)]
 #![no_std]
 
-extern crate m;
 #[macro_use]
 extern crate mat;
+extern crate micromath;
 
-use core::ops;
-
-// XXX is this a bug? the `Float` extension trait *is* used
-#[allow(unused_imports)]
-use m::Float;
 use mat::traits::{Matrix, Transpose};
+#[allow(unused_imports)]
+use micromath::F32Ext;
+use micromath::{vector::F32x3, Quaternion};
 
 /// MARG orientation filter
 pub struct Marg {
@@ -60,8 +58,8 @@ impl Marg {
         let mut dqdt = 0.5 * self.q * omega;
 
         // normalize orientation vectors
-        a *= rsqrt(a.norm());
-        m *= rsqrt(m.norm());
+        a *= a.norm().invsqrt();
+        m *= m.norm().invsqrt();
 
         // direction of the earth's magnetic field (Eq. 45 & 46)
         let h = self.q * Quaternion(0., m.x, m.y, m.z) * self.q.conj();
@@ -143,7 +141,7 @@ impl Marg {
 
         // normalize (beware of division by zero!)
         if nabla_f != Quaternion(0., 0., 0., 0.) {
-            nabla_f *= rsqrt(nabla_f.norm());
+            nabla_f *= nabla_f.norm().invsqrt();
 
             // update dqqt (Eq. 43)
             dqdt -= self.beta * nabla_f;
@@ -153,125 +151,19 @@ impl Marg {
         self.q += dqdt * self.sample_period;
 
         // normalize the quaternion
-        self.q *= rsqrt(self.q.norm());
+        self.q *= self.q.norm().invsqrt();
 
         self.q
     }
 }
 
-/// Vector in 3D space
-#[derive(Clone, Copy)]
-pub struct F32x3 {
-    /// X component
-    pub x: f32,
-    /// Y component
-    pub y: f32,
-    /// Z component
-    pub z: f32,
-}
-
-impl F32x3 {
+trait Norm {
     /// Returns the norm of this vector
-    pub fn norm(self) -> f32 {
+    fn norm(self) -> f32;
+}
+
+impl Norm for F32x3 {
+    fn norm(self) -> f32 {
         self.x * self.x + self.y * self.y + self.z * self.z
-    }
-}
-
-impl ops::MulAssign<f32> for F32x3 {
-    fn mul_assign(&mut self, k: f32) {
-        self.x *= k;
-        self.y *= k;
-        self.z *= k;
-    }
-}
-
-/// Quaternion
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Quaternion(pub f32, pub f32, pub f32, pub f32);
-
-impl Quaternion {
-    /// Returns the conjugate of this quaternion
-    pub fn conj(self) -> Self {
-        Quaternion(self.0, -self.1, -self.2, -self.3)
-    }
-
-    /// Returns the norm of this quaternion
-    pub fn norm(self) -> f32 {
-        self.0 * self.0 + self.1 * self.1 + self.2 * self.2 + self.3 * self.3
-    }
-}
-
-fn rsqrt(x: f32) -> f32 {
-    1. / x.sqrt()
-}
-
-// Fast inverse square root
-// XXX what's the effect of the rounding error on the filter?
-#[cfg(fast)]
-fn rsqrt(x: f32) -> f32 {
-    use core::mem;
-
-    let y: f32 = unsafe {
-        let i: i32 = mem::transmute(x);
-        mem::transmute(0x5f3759df - (i >> 1))
-    };
-
-    y * (1.5 - 0.5 * x * y * y)
-}
-
-impl ops::AddAssign<Quaternion> for Quaternion {
-    fn add_assign(&mut self, rhs: Quaternion) {
-        self.0 += rhs.0;
-        self.1 += rhs.1;
-        self.2 += rhs.2;
-        self.3 += rhs.3;
-    }
-}
-
-impl ops::MulAssign<f32> for Quaternion {
-    fn mul_assign(&mut self, k: f32) {
-        self.0 *= k;
-        self.1 *= k;
-        self.2 *= k;
-        self.3 *= k;
-    }
-}
-
-impl ops::SubAssign<Quaternion> for Quaternion {
-    fn sub_assign(&mut self, rhs: Quaternion) {
-        self.0 -= rhs.0;
-        self.1 -= rhs.1;
-        self.2 -= rhs.2;
-        self.3 -= rhs.3;
-    }
-}
-
-impl ops::Mul<Quaternion> for Quaternion {
-    type Output = Self;
-
-    fn mul(self, b: Self) -> Self {
-        let a = self;
-        Quaternion(
-            a.0 * b.0 - a.1 * b.1 - a.2 * b.2 - a.3 * b.3,
-            a.0 * b.1 + a.1 * b.0 + a.2 * b.3 - a.3 * b.2,
-            a.0 * b.2 - a.1 * b.3 + a.2 * b.0 + a.3 * b.1,
-            a.0 * b.3 + a.1 * b.2 - a.2 * b.1 + a.3 * b.0,
-        )
-    }
-}
-
-impl ops::Mul<f32> for Quaternion {
-    type Output = Self;
-
-    fn mul(self, k: f32) -> Self {
-        Quaternion(self.0 * k, self.1 * k, self.2 * k, self.3 * k)
-    }
-}
-
-impl ops::Mul<Quaternion> for f32 {
-    type Output = Quaternion;
-
-    fn mul(self, q: Quaternion) -> Quaternion {
-        q * self
     }
 }
